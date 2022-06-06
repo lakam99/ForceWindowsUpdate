@@ -3,7 +3,20 @@
 #This script retrieves a list of current updates and installs it to the machine
 #Note:
 #You need to replace the 'send-log-to-server' function with your own &
-#change the logpath on line 23 to your own
+#change the logpath on line 25 to your own
+
+function test-connection-to-internet {
+    $maxRetry = 50;
+    $connStatus = $False;
+    $attemptNum = 1;
+    $sleepTime = 5;
+    do {
+        $connStatus = (Test-NetConnection).PingSucceeded;
+        Write-Host "Attempting to connect ($attemptNum / $maxRetry)...";
+        sleep $sleepTime;
+    } while ($connStatus -eq $False);
+    return $connStatus;
+}
 
 
 #Replace this function with the function that points to your log server + uses your auth token
@@ -12,7 +25,7 @@ function send-log-to-server {
     $server = '#####'; #fill in
     $log_str = Get-Content $full_log_path -Delimiter '!!!!!!!!';
     $req_data = @{auth="####";data=(@{pc_name=$(hostname);log_str=$log_str} | ConvertTo-Json)} | ConvertTo-Json #fill in auth
-    if ($log_str) {
+    if ($log_str -and (test-connection-to-internet)) {
         Invoke-WebRequest -Uri $server -Method 'POST' -ContentType 'application/json' -Body $req_data;
     }
 }
@@ -36,13 +49,7 @@ if ($args[0] -eq 'reboot') {
         $updates | Select Title | Out-Host;
     }
 
-    $maxRetry = 50;
-    $connStatus = $False;
-    $attemptNum = 1;
-    do {
-        $connStatus = (Test-NetConnection).PingSucceeded;
-        Write-Host "Attempting to connect ($attemptNum / $maxRetry)...";
-    } while ($connStatus -eq $False);
+    
 
     Stop-Transcript;
 
