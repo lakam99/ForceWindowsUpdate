@@ -11,9 +11,9 @@ function test-connection-to-internet {
     $attemptNum = 1;
     $sleepTime = 5;
     do {
-        $connStatus = (Test-NetConnection).PingSucceeded;
         Write-Host "Attempting to connect ($attemptNum / $maxRetry)...";
-        sleep $sleepTime;
+        $connStatus = (Test-NetConnection).PingSucceeded;
+        if (!($connStatus)) {sleep $sleepTime;}
     } while ($connStatus -eq $False);
     return $connStatus;
 }
@@ -49,13 +49,8 @@ if ($args[0] -eq 'reboot') {
         $updates | Select Title | Out-Host;
     }
 
-    
-
     Stop-Transcript;
-
-    if ($connStatus) {
-        send-log-to-server $logpath;
-    }
+    send-log-to-server;
 
     Remove-ItemProperty -Path $regPath -Name $regName;
     exit;
